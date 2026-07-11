@@ -1,17 +1,17 @@
 # Post Articles Dashboard
 
-Frontend for **Tes Frontend Sharing Vision 2023**, built with [Next.js](https://nextjs.org) (App Router), [Ant Design](https://ant.design), Tailwind CSS and react-icons.
+Frontend for articles, built with [Next.js](https://nextjs.org) (App Router), [Ant Design](https://ant.design), Tailwind CSS and react-icons.
 
 It consumes the Go article microservice in [`../server`](../server) — start that API first.
 
 ## Pages
 
-| Route                 | Page      | Description                                                                 |
-|-----------------------|-----------|-----------------------------------------------------------------------------|
+| Route                 | Page      | Description                                                                                                                                                                                                         |
+| --------------------- | --------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
 | `/`                   | All Posts | Tabs for **Published**, **Drafts** and **Trashed**; each tab is a table with title, category and action (edit / trash icons). Trash moves an article to the Trashed tab; on the Trashed tab it deletes permanently. |
-| `/add-new`            | Add New   | Form with Title, Content and Category plus **Publish** and **Draft** buttons. |
-| `/articles/[id]/edit` | Edit      | Same form prefilled from the API, with **Publish** and **Draft** buttons.     |
-| `/preview`            | Preview   | Blog view of published articles with pagination.                             |
+| `/add-new`            | Add New   | Form with Title, Content and Category plus **Publish** and **Draft** buttons.                                                                                                                                       |
+| `/articles/[id]/edit` | Edit      | Same form prefilled from the API, with **Publish** and **Draft** buttons.                                                                                                                                           |
+| `/preview`            | Preview   | Blog view of published articles with pagination.                                                                                                                                                                    |
 
 Form fields mirror the API validation: title ≥ 20 chars, content ≥ 200 chars, category ≥ 3 chars. Server-side validation errors are mapped back onto the form fields.
 
