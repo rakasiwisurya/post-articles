@@ -32,22 +32,45 @@ src/
     └── types.ts          # Article types
 ```
 
-## Getting Started
+## How to Run
 
-1. Run the backend API (see [`../server/README.md`](../server/README.md)); it listens on `http://localhost:8080` by default.
-2. Install dependencies and start the dev server:
+**Prerequisites:** Node.js 20+, the backend API running (see [`../server/README.md`](../server/README.md)).
+
+1. Start the backend API first, in a separate terminal:
 
    ```bash
+   cd server
+   go run ./cmd/api
+   ```
+
+   It listens on `http://localhost:8080` by default.
+
+2. In this folder, install dependencies:
+
+   ```bash
+   cd client
    npm install
+   ```
+
+3. Start the dev server:
+
+   ```bash
    npm run dev
    ```
 
-3. Open [http://localhost:3000](http://localhost:3000).
+4. Open [http://localhost:3000](http://localhost:3000) in your browser.
 
 To point at a different API host, set `NEXT_PUBLIC_API_BASE_URL` in `.env.local`:
 
 ```
 NEXT_PUBLIC_API_BASE_URL=http://localhost:8080
+```
+
+### Running a production build
+
+```bash
+npm run build
+npm run start
 ```
 
 ## Scripts
