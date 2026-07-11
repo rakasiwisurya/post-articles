@@ -1,65 +1,153 @@
-import Image from "next/image";
+"use client";
 
-export default function Home() {
-  return (
-    <div className="flex flex-col flex-1 items-center justify-center bg-zinc-50 font-sans dark:bg-black">
-      <main className="flex flex-1 w-full max-w-3xl flex-col items-center justify-between py-32 px-16 bg-white dark:bg-black sm:items-start">
-        <Image
-          className="dark:invert"
-          src="/next.svg"
-          alt="Next.js logo"
-          width={100}
-          height={20}
-          priority
-        />
-        <div className="flex flex-col items-center gap-6 text-center sm:items-start sm:text-left">
-          <h1 className="max-w-xs text-3xl font-semibold leading-10 tracking-tight text-black dark:text-zinc-50">
-            To get started, edit the page.tsx file.
-          </h1>
-          <p className="max-w-md text-lg leading-8 text-zinc-600 dark:text-zinc-400">
-            Looking for a starting point or more instructions? Head over to{" "}
-            <a
-              href="https://vercel.com/templates?framework=next.js&utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-              className="font-medium text-zinc-950 dark:text-zinc-50"
-            >
-              Templates
-            </a>{" "}
-            or the{" "}
-            <a
-              href="https://nextjs.org/learn?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-              className="font-medium text-zinc-950 dark:text-zinc-50"
-            >
-              Learning
-            </a>{" "}
-            center.
-          </p>
-        </div>
-        <div className="flex flex-col gap-4 text-base font-medium sm:flex-row">
-          <a
-            className="flex h-12 w-full items-center justify-center gap-2 rounded-full bg-foreground px-5 text-background transition-colors hover:bg-[#383838] dark:hover:bg-[#ccc] md:w-[158px]"
-            href="https://vercel.com/new?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-            target="_blank"
-            rel="noopener noreferrer"
+import { useCallback, useEffect, useMemo, useState } from "react";
+import { useRouter } from "next/navigation";
+import { App, Button, Popconfirm, Table, Tabs, Typography } from "antd";
+import type { TableProps } from "antd";
+import { FiEdit2, FiTrash2 } from "react-icons/fi";
+import { deleteArticle, listArticles, updateArticle } from "@/lib/api";
+import type { Article, ArticleStatus } from "@/lib/types";
+
+// The dashboard works on the full list and lets each tab filter client-side.
+const FETCH_LIMIT = 1000;
+
+const TABS: { key: ArticleStatus; label: string }[] = [
+  { key: "publish", label: "Published" },
+  { key: "draft", label: "Drafts" },
+  { key: "thrash", label: "Trashed" },
+];
+
+export default function AllPostsPage() {
+  const router = useRouter();
+  const { message } = App.useApp();
+  const [articles, setArticles] = useState<Article[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [activeTab, setActiveTab] = useState<ArticleStatus>("publish");
+
+  const loadArticles = useCallback(async () => {
+    setLoading(true);
+    try {
+      const { articles } = await listArticles(FETCH_LIMIT, 0);
+      setArticles(articles);
+    } catch (error) {
+      message.error(error instanceof Error ? error.message : "Failed to load articles");
+    } finally {
+      setLoading(false);
+    }
+  }, [message]);
+
+  useEffect(() => {
+    void loadArticles();
+  }, [loadArticles]);
+
+  const moveToTrash = async (article: Article) => {
+    try {
+      await updateArticle(article.id, {
+        title: article.title,
+        content: article.content,
+        category: article.category,
+        status: "thrash",
+      });
+      message.success(`"${article.title}" moved to trash`);
+      await loadArticles();
+    } catch (error) {
+      message.error(error instanceof Error ? error.message : "Failed to move article to trash");
+    }
+  };
+
+  const deletePermanently = async (article: Article) => {
+    try {
+      await deleteArticle(article.id);
+      message.success(`"${article.title}" deleted permanently`);
+      await loadArticles();
+    } catch (error) {
+      message.error(error instanceof Error ? error.message : "Failed to delete article");
+    }
+  };
+
+  const columnsFor = (status: ArticleStatus): TableProps<Article>["columns"] => [
+    {
+      title: "Title",
+      dataIndex: "title",
+      key: "title",
+      ellipsis: true,
+    },
+    {
+      title: "Category",
+      dataIndex: "category",
+      key: "category",
+      width: 200,
+    },
+    {
+      title: "Action",
+      key: "action",
+      width: 120,
+      align: "center",
+      render: (_, article) => (
+        <div className="flex items-center justify-center gap-1">
+          <Button
+            type="text"
+            aria-label={`Edit ${article.title}`}
+            icon={<FiEdit2 />}
+            onClick={() => router.push(`/articles/${article.id}/edit`)}
+          />
+          <Popconfirm
+            title={status === "thrash" ? "Delete permanently?" : "Move to trash?"}
+            description={
+              status === "thrash"
+                ? "This will remove the article from the database."
+                : "The article will show up in the Trashed tab."
+            }
+            okText="Yes"
+            cancelText="No"
+            onConfirm={() =>
+              status === "thrash" ? deletePermanently(article) : moveToTrash(article)
+            }
           >
-            <Image
-              className="dark:invert"
-              src="/vercel.svg"
-              alt="Vercel logomark"
-              width={16}
-              height={16}
+            <Button
+              type="text"
+              danger
+              aria-label={`Trash ${article.title}`}
+              icon={<FiTrash2 />}
             />
-            Deploy Now
-          </a>
-          <a
-            className="flex h-12 w-full items-center justify-center rounded-full border border-solid border-black/[.08] px-5 transition-colors hover:border-transparent hover:bg-black/[.04] dark:border-white/[.145] dark:hover:bg-[#1a1a1a] md:w-[158px]"
-            href="https://nextjs.org/docs?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            Documentation
-          </a>
+          </Popconfirm>
         </div>
-      </main>
+      ),
+    },
+  ];
+
+  const tabItems = useMemo(
+    () =>
+      TABS.map(({ key, label }) => {
+        const rows = articles.filter((article) => article.status === key);
+        return {
+          key,
+          label: `${label} (${rows.length})`,
+          children: (
+            <Table<Article>
+              rowKey="id"
+              columns={columnsFor(key)}
+              dataSource={rows}
+              loading={loading}
+              pagination={{ pageSize: 10, hideOnSinglePage: true }}
+            />
+          ),
+        };
+      }),
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    [articles, loading],
+  );
+
+  return (
+    <div className="flex flex-col gap-4">
+      <Typography.Title level={3} className="mb-0!">
+        All Posts
+      </Typography.Title>
+      <Tabs
+        activeKey={activeTab}
+        onChange={(key) => setActiveTab(key as ArticleStatus)}
+        items={tabItems}
+      />
     </div>
   );
 }
