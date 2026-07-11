@@ -24,17 +24,16 @@ export default function AllPostsPage() {
   const [loading, setLoading] = useState(true);
   const [activeTab, setActiveTab] = useState<ArticleStatus>("publish");
 
-  const loadArticles = useCallback(async () => {
-    setLoading(true);
-    try {
-      const { articles } = await listArticles(FETCH_LIMIT, 0);
-      setArticles(articles);
-    } catch (error) {
-      message.error(error instanceof Error ? error.message : "Failed to load articles");
-    } finally {
-      setLoading(false);
-    }
-  }, [message]);
+  const loadArticles = useCallback(
+    () =>
+      listArticles(FETCH_LIMIT, 0)
+        .then(({ articles }) => setArticles(articles))
+        .catch((error: unknown) => {
+          message.error(error instanceof Error ? error.message : "Failed to load articles");
+        })
+        .finally(() => setLoading(false)),
+    [message],
+  );
 
   useEffect(() => {
     void loadArticles();

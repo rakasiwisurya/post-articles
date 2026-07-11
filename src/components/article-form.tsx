@@ -6,11 +6,10 @@ import { FiSave, FiSend } from "react-icons/fi";
 import { ApiError } from "@/lib/api";
 import type { Article, ArticlePayload, ArticleStatus } from "@/lib/types";
 
-interface FormValues {
-  title: string;
-  content: string;
-  category: string;
-}
+const FIELD_NAMES = ["title", "content", "category"] as const;
+type FieldName = (typeof FIELD_NAMES)[number];
+
+type FormValues = Record<FieldName, string>;
 
 interface ArticleFormProps {
   initialValues?: Pick<Article, "title" | "content" | "category">;
@@ -41,12 +40,16 @@ export default function ArticleForm({ initialValues, onSubmit }: ArticleFormProp
       await onSubmit({ ...values, status });
     } catch (error) {
       if (error instanceof ApiError && error.fields) {
-        form.setFields(
-          Object.entries(error.fields).map(([name, fieldError]) => ({
-            name,
-            errors: [fieldError],
-          })),
-        );
+        const fieldErrors = Object.entries(error.fields)
+          .filter((entry): entry is [FieldName, string] =>
+            (FIELD_NAMES as readonly string[]).includes(entry[0]),
+          )
+          .map(([name, fieldError]) => ({ name, errors: [fieldError] }));
+        if (fieldErrors.length > 0) {
+          form.setFields(fieldErrors);
+        } else {
+          message.error(error.message);
+        }
       } else {
         message.error(error instanceof Error ? error.message : "Failed to save article");
       }

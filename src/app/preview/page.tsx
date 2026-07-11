@@ -23,18 +23,25 @@ export default function PreviewPage() {
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    setLoading(true);
+    let active = true;
     listArticles(PAGE_SIZE, (page - 1) * PAGE_SIZE, "publish")
       .then(({ articles, total }) => {
+        if (!active) return;
         setArticles(articles);
         setTotal(total);
       })
       .catch((error) => {
+        if (!active) return;
         message.error(
           error instanceof Error ? error.message : "Failed to load articles",
         );
       })
-      .finally(() => setLoading(false));
+      .finally(() => {
+        if (active) setLoading(false);
+      });
+    return () => {
+      active = false;
+    };
   }, [page, message]);
 
   return (

@@ -16,30 +16,36 @@ const STATUS_TAG: Record<ArticleStatus, { color: string; label: string }> = {
 export default function EditArticlePage() {
   const { id } = useParams<{ id: string }>();
   const articleId = Number(id);
+  const invalidId = !Number.isInteger(articleId) || articleId < 1;
   const router = useRouter();
   const { message } = App.useApp();
   const [article, setArticle] = useState<Article | null>(null);
-  const [loading, setLoading] = useState(true);
+  const [loading, setLoading] = useState(!invalidId);
   const [notFound, setNotFound] = useState(false);
 
   useEffect(() => {
-    if (!Number.isInteger(articleId) || articleId < 1) {
-      setNotFound(true);
-      setLoading(false);
-      return;
-    }
+    if (invalidId) return;
 
+    let active = true;
     getArticle(articleId)
-      .then(setArticle)
+      .then((data) => {
+        if (active) setArticle(data);
+      })
       .catch((error) => {
+        if (!active) return;
         if (error instanceof ApiError && error.status === 404) {
           setNotFound(true);
         } else {
           message.error(error instanceof Error ? error.message : "Failed to load article");
         }
       })
-      .finally(() => setLoading(false));
-  }, [articleId, message]);
+      .finally(() => {
+        if (active) setLoading(false);
+      });
+    return () => {
+      active = false;
+    };
+  }, [articleId, invalidId, message]);
 
   const handleSubmit = async (payload: ArticlePayload) => {
     await updateArticle(articleId, payload);
@@ -55,7 +61,7 @@ export default function EditArticlePage() {
     return <Skeleton active paragraph={{ rows: 8 }} />;
   }
 
-  if (notFound || !article) {
+  if (invalidId || notFound || !article) {
     return (
       <Result
         status="404"
